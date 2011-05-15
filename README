@@ -1,0 +1,24 @@
+A Python script that uses func perform basic SELinux monitoring and management of your minions.
+
+Requirements: http://func.fedorahosted.org
+
+Get the SELinux status:
+
+    selinux-overlord.py --status
+
+Display all enforced denials:
+
+    selinux-overlord.py --enforced-denials
+
+Dump all raw AVCs to disk.  Each minion will have it's own file:
+
+    selinux-overlord.py --dump-avcs
+
+Upgrade the SELinux policy RPMs:
+
+    selinux-overlord.py --upgrade-policy
+
+It defaults to querying all minions, but you can specify groups of them
+if you wish:
+
+   selinux-overlord.py --status app* db*
