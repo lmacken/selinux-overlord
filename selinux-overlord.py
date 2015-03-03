@@ -27,6 +27,7 @@ from func.overlord.client import Overlord
 
 status, stdout, stderr = range(3)
 
+
 class SELinuxOverlord(Overlord):
     selinux_status = {'Enforcing': [], 'Permissive': [], 'Disabled': []}
     selinux_minions = {}
@@ -52,7 +53,8 @@ class SELinuxOverlord(Overlord):
 
     def get_selinux_denials(self, minion):
         overlord = Overlord(minion)
-        return overlord.command.run('ausearch -m AVC -ts this-week --input-logs')[minion]
+        return overlord.command.run('ausearch -m AVC -ts this-week '
+                                    '--input-logs')[minion]
 
     def dump_selinux_denials(self):
         """ Write out all SELinux denials for all minions """
@@ -69,7 +71,8 @@ class SELinuxOverlord(Overlord):
                     out = file(minion, 'w')
                     out.close()
                 else:
-                    print "[%s] Problem running ausearch: %r" % (minion, result)
+                    print "[%s] Problem running ausearch: %r" % \
+                          (minion, result)
 
     def get_enforced_denials(self):
         """ Get a quick list of SELinux denials on enforced hosts """
@@ -79,7 +82,8 @@ class SELinuxOverlord(Overlord):
             for m, r in audit2allow.iteritems():
                 if r[stdout].strip():
                     print "[%s]\n%s\n" % (m, r[stdout])
-            audit2allow = overlord.command.run('audit2allow -l -i /var/log/messages')
+            audit2allow = overlord.command.run('audit2allow -l -i '
+                                               '/var/log/messages')
             for m, r in audit2allow.iteritems():
                 if r[stdout].strip():
                     print "[%s]\n%s\n" % (m, r[stdout])
@@ -89,30 +93,36 @@ class SELinuxOverlord(Overlord):
         print "Cleaning yum metadata..."
         results = self.command.run('yum clean metadata')
         for minion, result in results.items():
-           if result[0]:
-              print "[%s] Problem cleaning yum cache: %s" % (minion, result[1])
+            if result[0]:
+                print "[%s] Problem cleaning yum cache: %s" % \
+                      (minion, result[1])
 
         async_client = Overlord(self.minion_glob, nforks=10, async=True)
 
         print "Upgrading SELinux policy..."
         job_id = async_client.command.run('yum -y update selinux\*')
 
-        running = True          
+        running = True
 
-        while running:  
-            time.sleep(20)                                                 
+        while running:
+            time.sleep(20)
             return_code, results = async_client.job_status(job_id)
-            if return_code in (jobthing.JOB_ID_RUNNING, jobthing.JOB_ID_PARTIAL):
+            if return_code in (jobthing.JOB_ID_RUNNING,
+                               jobthing.JOB_ID_PARTIAL):
                 continue
             elif return_code == jobthing.JOB_ID_FINISHED:
                 for minion, result in results.items():
                     if result[0]:
-                        print '[%s] Problem upgrading policy: %s' % (minion, result[1])
+                        print '[%s] Problem upgrading policy: %s' % \
+                              (minion, result[1])
                     if 'Updated: selinux-policy' in result[1]:
-                        ver = result[1].split('Updated: ')[-1].split()[1].split(':')[1]
-                        print "[%s] selinux-policy successfully upgraded to %s" % (minion, ver)
+                        ver = result[1].split('Updated: ')[-1].split()[1]. \
+                            split(':')[1]
+                        print "[%s] selinux-policy successfully upgraded to " \
+                              "%s" % (minion, ver)
                     else:
-                        print "selinux-policy *not* upgraded on %s: %s" % (minion, result[1])
+                        print "selinux-policy *not* upgraded on %s: %s" % \
+                              (minion, result[1])
                 running = False
             elif return_code == jobthing.JOB_ID_LOST_IN_SPACE:
                 print "Job %s lost in space: %s" % (job_id, results)
@@ -125,8 +135,8 @@ class SELinuxOverlord(Overlord):
 if __name__ == '__main__':
     parser = OptionParser('usage: %prog [options] [minion1[;minion2]]')
     parser.add_option('-s', '--status', action='store_true', dest='status',
-                       help='Display the SELinux status of all minions')
-    parser.add_option('-e', '--enforced-denials', action='store_true', 
+                      help='Display the SELinux status of all minions')
+    parser.add_option('-e', '--enforced-denials', action='store_true',
                       dest='enforced_denials', help='Display enforced denials')
     parser.add_option('-d', '--dump-avcs', action='store_true',
                       dest='dump_avcs', help='Dump AVCs to disk')
@@ -139,7 +149,7 @@ if __name__ == '__main__':
 
     print "Determining SELinux status on minions: %s" % minions
     pprint(overlord.get_selinux_status())
- 
+
     if opts.enforced_denials:
         print "Finding enforced SELinux denials..."
         overlord.get_enforced_denials()
